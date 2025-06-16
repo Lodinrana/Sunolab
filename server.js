@@ -7,8 +7,23 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
+// Aggiungi questo middleware per il debug (opzionale ma utile)
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  console.log('Body received:', req.body);
+  next();
+});
+
+// MODIFICA QUI SOTTO - QUESTA È LA PARTE CHE DEVI SOVRASCRIVERE
 app.post('/api/analyze', (req, res) => {
-  const { audioUrl } = req.body;
+  let audioUrl;
+  
+  // Gestione di entrambi i casi: JSON object o stringa pura
+  if (typeof req.body === 'string') {
+    audioUrl = req.body;
+  } else {
+    audioUrl = req.body.audioUrl;
+  }
 
   if (!audioUrl) {
     return res.status(400).json({ error: 'audioUrl is required' });
@@ -24,6 +39,7 @@ app.post('/api/analyze', (req, res) => {
 
   res.status(200).json(result);
 });
+// FINE DELLA MODIFICA
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
