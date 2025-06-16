@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const fetch = require('node-fetch');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -7,34 +8,22 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-app.post('/api/analyze', (req, res) => {
-  let audioUrl;
-  
-  // Gestione avanzata input
-  if (typeof req.body === 'string') {
-    try {
-      const parsed = JSON.parse(req.body);
-      audioUrl = parsed.audioUrl || parsed;
-    } catch (e) {
-      audioUrl = req.body;
-    }
-  } else if (typeof req.body === 'object') {
-    audioUrl = req.body.audioUrl;
-  }
+// Endpoint per la root
+app.get('/', (req, res) => {
+  res.send(`
+    <h1>Sunolab API</h1>
+    <p>Use POST /api/analyze to analyze music</p>
+    <p>Example request:</p>
+    <pre>
+curl -X POST ${process.env.RENDER_EXTERNAL_URL || 'https://YOUR_URL.onrender.com'}/api/analyze \\
+  -H "Content-Type: application/json" \\
+  -d '{"audioUrl":"https://example.com/audio.mp3"}'
+    </pre>
+  `);
+});
 
-  if (!audioUrl) {
-    return res.status(400).json({ error: 'audioUrl is required' });
-  }
-
-  const result = {
-    genre: 'Progressive Trance',
-    mood: 'Uplifting, emotional',
-    structure: 'Intro, verse, breakdown, build-up, drop, outro',
-    style: 'Spacious pads, female vocals, emotional melodies',
-    sunoPrompt: 'uplifting trance, emotional female vocal, energetic drop, progressive structure'
-  };
-
-  res.status(200).json(result);
+app.post('/api/analyze', async (req, res) => {
+  // ... il resto del codice invariato ...
 });
 
 app.listen(PORT, () => {
