@@ -5,13 +5,135 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SunoLab Music Analyzer</title>
     <style>
-        /* ... (INCCOLLA QUI TUTTO IL CODICE CSS PRECEDENTE) ... */
+        /* ... (MANTIENI LO STESSO CSS) ... */
     </style>
 </head>
 <body>
-    <!-- ... (INCCOLLA QUI TUTTO IL CODICE HTML PRECEDENTE) ... -->
+    <div class="container">
+        <h1>🧪 SunoLab Music Analyzer</h1>
+        
+        <div class="input-group">
+            <label for="audioUrl">Incolla URL del brano (MP3):</label>
+            <input type="text" id="audioUrl" placeholder="https://..." autofocus>
+        </div>
+        
+        <button id="analyzeBtn">Analizza Brano</button>
+        
+        <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <p>Analisi in corso...</p>
+        </div>
+        
+        <div class="error" id="error"></div>
+        
+        <div class="result" id="result">
+            <h2 class="result-title">Risultati Analisi</h2>
+            <div id="resultContent"></div>
+        </div>
+    </div>
+
     <script>
-        // ... (INCCOLLA QUI TUTTO IL CODICE JAVASCRIPT PRECEDENTE) ...
+        document.getElementById('analyzeBtn').addEventListener('click', analyzeTrack);
+        
+        function analyzeTrack() {
+            const audioUrl = document.getElementById('audioUrl').value;
+            const resultDiv = document.getElementById('result');
+            const loader = document.getElementById('loader');
+            const errorDiv = document.getElementById('error');
+            
+            // Reset UI
+            resultDiv.style.display = 'none';
+            errorDiv.style.display = 'none';
+            loader.style.display = 'block';
+            
+            // Controllo URL di base
+            if (!audioUrl || !audioUrl.startsWith('http')) {
+                showError("Inserisci un URL valido (deve iniziare con http/https)");
+                return;
+            }
+            
+            // Controllo estensione MP3
+            if (!audioUrl.toLowerCase().endsWith('.mp3')) {
+                showError("L'URL deve puntare a un file MP3 diretto");
+                return;
+            }
+            
+            // Invia richiesta all'API
+            fetch('https://sunolab.onrender.com', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ 
+                    audioUrl: audioUrl  // CORRETTO: "audioUrl"
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Errore nella richiesta API');
+                }
+                return response.json();
+            })
+            .then(data => {
+                // Nascondi loader
+                loader.style.display = 'none';
+                
+                // Mostra risultati
+                displayResults(data);
+                resultDiv.style.display = 'block';
+            })
+            .catch(error => {
+                loader.style.display = 'none';
+                showError("Errore nell'analisi: " + error.message);
+            });
+        }
+        
+        function displayResults(data) {
+            const resultContent = document.getElementById('resultContent');
+            let html = '';
+            
+            // Mappatura nomi campi più descrittivi
+            const fieldNames = {
+                bpm: "BPM",
+                key: "Tonalità",
+                genre: "Genere",
+                energy: "Energia",
+                danceability: "Ballabilità",
+                valence: "Valenza emotiva",
+                acousticness: "Acusticità",
+                speechiness: "Contenuto verbale"
+            };
+            
+            for (const key in data) {
+                if (data.hasOwnProperty(key)) {
+                    const value = data[key];
+                    let displayName = fieldNames[key] || key;
+                    let formattedValue = value;
+                    
+                    if (typeof value === 'number') {
+                        if (key === 'bpm') {
+                            formattedValue = Math.round(value);
+                        } else {
+                            formattedValue = (value * 100).toFixed(1) + '%';
+                        }
+                    }
+                    
+                    html += `
+                        <div class="result-item">
+                            <strong>${displayName}:</strong> ${formattedValue}
+                        </div>
+                    `;
+                }
+            }
+            
+            resultContent.innerHTML = html;
+        }
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
     </script>
 </body>
 </html>
